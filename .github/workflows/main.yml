@@ -6,6 +6,9 @@ on:
 
   workflow_dispatch:
 
+env:
+  DOCKER_IMG: ggodoi1986/rotten-potatoes
+
 jobs:
   CI:
     runs-on: ubuntu-latest
@@ -26,8 +29,8 @@ jobs:
           file: ./src/Dockerfile
           push: true
           tags: |
-            ggodoi1986/rotten-potatoes:latest
-            ggodoi1986/rotten-potatoes:v${{ github.run_number }}
+            ${{ env.DOCKER_IMG }}:latest
+            ${{ env.DOCKER_IMG }}:v${{ github.run_number }}
   CD:
     needs: [CI]
     runs-on: ubuntu-latest
@@ -40,3 +43,9 @@ jobs:
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBECONFIG }}
+          
+      - name: Deploy to Kubernetes cluster
+        uses: Azure/k8s-deploy@v1.5
+        with:
+          images: ${{ env.DOCKER_IMG }}:v${{ github.run_number }}
+          manifests: k8s/deployment.yaml
